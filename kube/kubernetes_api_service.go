@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -126,6 +127,9 @@ func (k *KubernetesApiServiceImpl) CreatePrivilegedPod(nodeName string, containe
 		Namespace:    k.targetNamespace,
 		Labels: map[string]string{
 			"app": "ksniff",
+			"app.kubernetes.io/instance": "ksniff",
+			"app.kubernetes.io/managed-by": "Ruben",
+			"app.kubernetes.io/name": "ksniff",
 		},
 	}
 
@@ -142,6 +146,17 @@ func (k *KubernetesApiServiceImpl) CreatePrivilegedPod(nodeName string, containe
 		},
 	}
 
+	resources := corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("150M"),
+			corev1.ResourceCPU: resource.MustParse("25m"),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU: resource.MustParse("15m"),
+			corev1.ResourceMemory: resource.MustParse("75M"),
+		},
+	}
+
 	privileged := true
 	privilegedContainer := corev1.Container{
 		Name:  containerName,
@@ -154,6 +169,7 @@ func (k *KubernetesApiServiceImpl) CreatePrivilegedPod(nodeName string, containe
 
 		Command:      []string{"sh", "-c", "sleep 10000000"},
 		VolumeMounts: volumeMounts,
+		Resources: resources,
 	}
 
 	hostPathType := corev1.HostPathSocket
